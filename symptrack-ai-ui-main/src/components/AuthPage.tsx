@@ -23,7 +23,7 @@ const AuthPage = () => {
   const [registerPassword, setRegisterPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmail || !loginPassword) {
       toast({
@@ -33,20 +33,40 @@ const AuthPage = () => {
       });
       return;
     }
-    
-    // Simple login validation
-    const userData = { email: loginEmail, password: loginPassword, type: 'login' };
-    localStorage.setItem('userSession', JSON.stringify(userData));
-    
-    toast({
-      title: "Success",
-      description: "Logged in successfully!",
-    });
-    
-    navigate("/chat");
+
+    try {
+      const response = await fetch("http://localhost:8000/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: loginEmail,
+          password: loginPassword,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Invalid credentials");
+      }
+
+      const data = await response.json();
+      localStorage.setItem("access_token", data.access_token);
+
+      toast({
+        title: "Success",
+        description: "Logged in successfully!",
+      });
+
+      navigate("/chat");
+    } catch (error: any) {
+      toast({
+        title: "Login Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !registerEmail || !registerPassword || !confirmPassword) {
       toast({
@@ -66,21 +86,41 @@ const AuthPage = () => {
       return;
     }
 
-    // Store user session
-    const userData = { 
-      fullName, 
-      email: registerEmail, 
-      password: registerPassword, 
-      type: 'register' 
-    };
-    localStorage.setItem('userSession', JSON.stringify(userData));
-    
-    toast({
-      title: "Success",
-      description: "Account created successfully!",
-    });
-    
-    navigate("/chat");
+    try {
+      const [firstName, ...lastNameParts] = fullName.trim().split(" ");
+      const lastName = lastNameParts.join(" ") || "-";
+
+      const response = await fetch("http://localhost:8000/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: registerEmail,
+          email: registerEmail,
+          first_name: firstName,
+          last_name: lastName,
+          password: registerPassword,
+          role: "user",
+          phone_number: "0000000000", // Dummy phone number
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Registration failed");
+      }
+
+      toast({
+        title: "Success",
+        description: "Account created successfully!",
+      });
+
+      setActiveTab("login"); // After registration, switch to login tab
+    } catch (error: any) {
+      toast({
+        title: "Registration Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -127,9 +167,9 @@ const AuthPage = () => {
                 <form onSubmit={handleLogin} className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input 
-                      id="email" 
-                      type="email" 
+                    <Input
+                      id="email"
+                      type="email"
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       placeholder="Enter your email"
@@ -139,9 +179,9 @@ const AuthPage = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
-                    <Input 
-                      id="password" 
-                      type="password" 
+                    <Input
+                      id="password"
+                      type="password"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       placeholder="Enter your password"
@@ -149,7 +189,7 @@ const AuthPage = () => {
                       required
                     />
                   </div>
-                  <Button 
+                  <Button
                     type="submit"
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl py-6 text-base font-medium"
                   >
@@ -167,9 +207,9 @@ const AuthPage = () => {
                 <form onSubmit={handleRegister} className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="fullName">Full Name</Label>
-                    <Input 
-                      id="fullName" 
-                      type="text" 
+                    <Input
+                      id="fullName"
+                      type="text"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder="Enter your full name"
@@ -179,9 +219,9 @@ const AuthPage = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="registerEmail">Email</Label>
-                    <Input 
-                      id="registerEmail" 
-                      type="email" 
+                    <Input
+                      id="registerEmail"
+                      type="email"
                       value={registerEmail}
                       onChange={(e) => setRegisterEmail(e.target.value)}
                       placeholder="Enter your email"
@@ -191,9 +231,9 @@ const AuthPage = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="registerPassword">Password</Label>
-                    <Input 
-                      id="registerPassword" 
-                      type="password" 
+                    <Input
+                      id="registerPassword"
+                      type="password"
                       value={registerPassword}
                       onChange={(e) => setRegisterPassword(e.target.value)}
                       placeholder="Create a password"
@@ -203,9 +243,9 @@ const AuthPage = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword">Confirm Password</Label>
-                    <Input 
-                      id="confirmPassword" 
-                      type="password" 
+                    <Input
+                      id="confirmPassword"
+                      type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Confirm your password"
@@ -213,7 +253,7 @@ const AuthPage = () => {
                       required
                     />
                   </div>
-                  <Button 
+                  <Button
                     type="submit"
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl py-6 text-base font-medium"
                   >
