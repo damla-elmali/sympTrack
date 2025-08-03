@@ -5,13 +5,17 @@ from database import Base
 
 # Kullanıcı tablosu
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
-    username = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
+    email = Column(String, unique=True)
+    username = Column(String, unique=True)
+    first_name = Column(String)
+    last_name = Column(String)
+    hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
+    role = Column(String)
+    phone_number = Column(String)
 
     # İlişki: Kullanıcının semptom kayıtları
     symptoms = relationship("Symptom", back_populates="owner")
